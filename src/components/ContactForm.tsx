@@ -33,7 +33,8 @@ export function ContactForm() {
   async function onSubmit(data: FormValues) {
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
+      // Store the contact form submission in Supabase
+      const { error: dbError } = await supabase
         .from('contacts')
         .insert([
           {
@@ -43,7 +44,17 @@ export function ContactForm() {
           }
         ]);
 
-      if (error) throw error;
+      if (dbError) throw dbError;
+
+      // Send confirmation email
+      const { error: emailError } = await supabase.functions.invoke('send-confirmation', {
+        body: {
+          name: data.name,
+          email: data.email,
+        },
+      });
+
+      if (emailError) throw emailError;
       
       toast({
         title: "Message sent!",
