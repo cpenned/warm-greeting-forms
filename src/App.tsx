@@ -7,6 +7,10 @@ import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import { Navigation } from "./components/Navigation";
 import { Toaster } from "./components/ui/toaster";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// Create a client
+const queryClient = new QueryClient();
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -34,21 +38,23 @@ function App() {
   }
 
   return (
-    <Router>
-      <Navigation />
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route
-          path="/admin"
-          element={session ? <Admin /> : <Navigate to="/auth" replace />}
-        />
-        <Route
-          path="/auth"
-          element={!session ? <Auth /> : <Navigate to="/admin" replace />}
-        />
-      </Routes>
-      <Toaster />
-    </Router>
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <Navigation />
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route
+            path="/admin"
+            element={session ? <Admin /> : <Navigate to="/auth" replace />}
+          />
+          <Route
+            path="/auth"
+            element={!session ? <Auth /> : <Navigate to="/admin" replace />}
+          />
+        </Routes>
+        <Toaster />
+      </Router>
+    </QueryClientProvider>
   );
 }
 
