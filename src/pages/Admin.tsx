@@ -1,9 +1,32 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { format } from "date-fns";
 
 const Admin = () => {
   const navigate = useNavigate();
+
+  const { data: contacts, isLoading } = useQuery({
+    queryKey: ["contacts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contacts")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -19,8 +42,42 @@ const Admin = () => {
             Sign Out
           </Button>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p>Welcome to the admin area. Here you can manage your contacts.</p>
+        <div className="bg-white rounded-lg shadow">
+          {isLoading ? (
+            <div className="p-6">Loading contacts...</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Message</TableHead>
+                  <TableHead>Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {contacts?.map((contact) => (
+                  <TableRow key={contact.id}>
+                    <TableCell>{contact.name}</TableCell>
+                    <TableCell>{contact.email}</TableCell>
+                    <TableCell className="max-w-md truncate">
+                      {contact.message}
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(contact.created_at), "PPp")}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {contacts?.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center">
+                      No contacts found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </div>
       </div>
     </div>
