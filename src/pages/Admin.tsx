@@ -17,7 +17,7 @@ const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const { data: contactsWithLogs, isLoading } = useQuery({
+  const { data: contactsWithLogs, isLoading, refetch } = useQuery({
     queryKey: ["contacts-with-logs"],
     queryFn: async () => {
       // Fetch contacts
@@ -68,7 +68,7 @@ const Admin = () => {
       });
 
       // Refetch the data to update the UI
-      await contactsWithLogs.refetch();
+      await refetch();
     } catch (error) {
       console.error("Error sending email:", error);
       toast({
