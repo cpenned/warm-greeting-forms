@@ -12,6 +12,11 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -23,15 +28,18 @@ const Admin = () => {
       // Fetch contacts
       const { data: contacts, error: contactsError } = await supabase
         .from("contacts")
-        .select("*, email_logs(template_name)")
+        .select("*, email_logs(template_name, sent_at)")
         .order("created_at", { ascending: false });
 
       if (contactsError) throw contactsError;
 
-      // Transform the data to include sent templates
+      // Transform the data to include sent templates and their dates
       return contacts.map(contact => ({
         ...contact,
-        sentTemplates: contact.email_logs.map((log: { template_name: string }) => log.template_name)
+        sentTemplates: contact.email_logs.map((log: { template_name: string, sent_at: string }) => ({
+          name: log.template_name,
+          sentAt: log.sent_at
+        }))
       }));
     },
   });
@@ -115,33 +123,37 @@ const Admin = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => sendEmail(contact.name, contact.email, "thanks", contact.id)}
-                          disabled={contact.sentTemplates.includes("thanks")}
-                          className={contact.sentTemplates.includes("thanks") ? "opacity-50" : ""}
-                        >
-                          Thanks
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => sendEmail(contact.name, contact.email, "improve", contact.id)}
-                          disabled={contact.sentTemplates.includes("improve")}
-                          className={contact.sentTemplates.includes("improve") ? "opacity-50" : ""}
-                        >
-                          Improve
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => sendEmail(contact.name, contact.email, "questions", contact.id)}
-                          disabled={contact.sentTemplates.includes("questions")}
-                          className={contact.sentTemplates.includes("questions") ? "opacity-50" : ""}
-                        >
-                          Questions
-                        </Button>
+                        {["thanks", "improve", "questions"].map((template) => {
+                          const sentTemplate = contact.sentTemplates.find(
+                            (t) => t.name === template
+                          );
+                          const isDisabled = !!sentTemplate;
+
+                          return (
+                            <HoverCard key={template}>
+                              <HoverCardTrigger asChild>
+                                <div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => sendEmail(contact.name, contact.email, template as "thanks" | "improve" | "questions", contact.id)}
+                                    disabled={isDisabled}
+                                    className={isDisabled ? "opacity-50" : ""}
+                                  >
+                                    {template.charAt(0).toUpperCase() + template.slice(1)}
+                                  </Button>
+                                </div>
+                              </HoverCardTrigger>
+                              {isDisabled && (
+                                <HoverCardContent className="w-auto">
+                                  <p className="text-sm">
+                                    Sent on {format(new Date(sentTemplate.sentAt), "PPp")}
+                                  </p>
+                                </HoverCardContent>
+                              )}
+                            </HoverCard>
+                          );
+                        })}
                       </div>
                     </TableCell>
                   </TableRow>
