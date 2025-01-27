@@ -46,6 +46,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { name, email } = validationResult.data;
 
+    // Generate a unique Message-ID
+    const messageId = `<${Date.now()}.${Math.random().toString(36).substring(2)}@loveable-resend.online>`;
+
     const emailResponse = await resend.emails.send({
       from: "Chris <chris@updates.loveable-resend.online>",
       to: [email],
@@ -55,6 +58,9 @@ const handler = async (req: Request): Promise<Response> => {
         <p>We have received your message and will get back to you as soon as possible.</p>
         <p>Best regards,<br>The Lovable Team</p>
       `,
+      headers: {
+        "Message-ID": messageId,
+      }
     });
 
     console.log("Email sent successfully:", emailResponse);
