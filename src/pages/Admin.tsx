@@ -11,9 +11,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { format } from "date-fns";
+import { useToast } from "@/components/ui/use-toast";
 
 const Admin = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const { data: contacts, isLoading } = useQuery({
     queryKey: ["contacts"],
@@ -31,6 +33,28 @@ const Admin = () => {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
+  };
+
+  const sendEmail = async (name: string, email: string, template: "thanks" | "improve" | "questions") => {
+    try {
+      const { error } = await supabase.functions.invoke("send-admin-email", {
+        body: { name, email, template },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Email sent successfully",
+        description: `${template} email sent to ${email}`,
+      });
+    } catch (error) {
+      console.error("Error sending email:", error);
+      toast({
+        title: "Error sending email",
+        description: "Please try again later",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -53,6 +77,7 @@ const Admin = () => {
                   <TableHead>Email</TableHead>
                   <TableHead>Message</TableHead>
                   <TableHead>Date</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -66,11 +91,36 @@ const Admin = () => {
                     <TableCell>
                       {format(new Date(contact.created_at), "PPp")}
                     </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => sendEmail(contact.name, contact.email, "thanks")}
+                        >
+                          Thanks
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => sendEmail(contact.name, contact.email, "improve")}
+                        >
+                          Improve
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => sendEmail(contact.name, contact.email, "questions")}
+                        >
+                          Questions
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
                 {contacts?.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center">
+                    <TableCell colSpan={5} className="text-center">
                       No contacts found
                     </TableCell>
                   </TableRow>
