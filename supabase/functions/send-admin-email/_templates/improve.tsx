@@ -22,25 +22,25 @@ export const ImproveEmail = ({
     <Preview>Help us improve our product</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Section style={logoSection}>
-          <Text style={logo}>Lovable</Text>
-        </Section>
-        <Section style={contentSection}>
-          <Heading style={h1}>Hi {name},</Heading>
-          <Text style={text}>
-            We're constantly working to make our product better, and your feedback is invaluable to us.
-          </Text>
-          <Text style={text}>
-            Could you take a moment to let us know what we could improve? What features would make your experience even better?
-          </Text>
-          <Text style={text}>
-            Simply reply to this email with your thoughts - we read every response!
-          </Text>
-          <Text style={signature}>
-            Thank you,<br />
-            The Lovable Team
-          </Text>
-        </Section>
+        <Heading style={h1}>Hello {name},</Heading>
+        <Text style={text}>
+          We hope you're enjoying our product. We're constantly working to make it better, and your feedback would be invaluable.
+        </Text>
+        <Text style={text}>
+          Could you take a moment to let us know:
+        </Text>
+        <Text style={list}>
+          • What features do you find most useful?<br />
+          • What could we improve?<br />
+          • What features would you like to see added?
+        </Text>
+        <Text style={text}>
+          Simply reply to this email with your thoughts. We read and consider all feedback carefully.
+        </Text>
+        <Text style={signature}>
+          Thank you for your help!<br />
+          The Team
+        </Text>
       </Container>
     </Body>
   </Html>
@@ -57,32 +57,11 @@ const container = {
   width: '580px',
 }
 
-const contentSection = {
-  backgroundColor: '#ffffff',
-  padding: '40px',
-  borderRadius: '8px',
-  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
-}
-
-const logoSection = {
-  padding: '20px 0',
-  textAlign: 'center' as const,
-}
-
-const logo = {
-  color: '#000',
-  fontSize: '32px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  textAlign: 'center' as const,
-  margin: '0',
-}
-
 const h1 = {
   color: '#1a1a1a',
   fontSize: '24px',
   fontWeight: 'bold',
-  margin: '0 0 24px',
+  margin: '40px 0',
   padding: '0',
 }
 
@@ -91,6 +70,14 @@ const text = {
   fontSize: '16px',
   lineHeight: '24px',
   margin: '24px 0',
+}
+
+const list = {
+  color: '#4a5568',
+  fontSize: '16px',
+  lineHeight: '24px',
+  margin: '24px 0',
+  paddingLeft: '20px',
 }
 
 const signature = {

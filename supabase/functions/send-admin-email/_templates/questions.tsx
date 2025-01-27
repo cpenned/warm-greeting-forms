@@ -22,22 +22,17 @@ export const QuestionsEmail = ({
     <Preview>How is everything going?</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Section style={logoSection}>
-          <Text style={logo}>Lovable</Text>
-        </Section>
-        <Section style={contentSection}>
-          <Heading style={h1}>Hello {name},</Heading>
-          <Text style={text}>
-            I wanted to check in and see how things are going with our product. Are you finding everything you need?
-          </Text>
-          <Text style={text}>
-            If you have any questions or need help with anything, please don't hesitate to reply to this email. We're here to help!
-          </Text>
-          <Text style={signature}>
-            Best regards,<br />
-            The Lovable Team
-          </Text>
-        </Section>
+        <Heading style={h1}>Hi {name},</Heading>
+        <Text style={text}>
+          I wanted to check in and see how you're doing with our product. Are you finding everything you need?
+        </Text>
+        <Text style={text}>
+          If you have any questions or need help with anything, please don't hesitate to reply to this email. We're here to help!
+        </Text>
+        <Text style={signature}>
+          Best regards,<br />
+          The Team
+        </Text>
       </Container>
     </Body>
   </Html>
@@ -54,32 +49,11 @@ const container = {
   width: '580px',
 }
 
-const contentSection = {
-  backgroundColor: '#ffffff',
-  padding: '40px',
-  borderRadius: '8px',
-  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
-}
-
-const logoSection = {
-  padding: '20px 0',
-  textAlign: 'center' as const,
-}
-
-const logo = {
-  color: '#000',
-  fontSize: '32px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  textAlign: 'center' as const,
-  margin: '0',
-}
-
 const h1 = {
   color: '#1a1a1a',
   fontSize: '24px',
   fontWeight: 'bold',
-  margin: '0 0 24px',
+  margin: '40px 0',
   padding: '0',
 }
 
