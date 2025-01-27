@@ -11,22 +11,28 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { format } from "date-fns";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const { data: contacts, isLoading } = useQuery({
-    queryKey: ["contacts"],
+  const { data: contactsWithLogs, isLoading } = useQuery({
+    queryKey: ["contacts-with-logs"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch contacts
+      const { data: contacts, error: contactsError } = await supabase
         .from("contacts")
-        .select("*")
+        .select("*, email_logs(template_name)")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (contactsError) throw contactsError;
+
+      // Transform the data to include sent templates
+      return contacts.map(contact => ({
+        ...contact,
+        sentTemplates: contact.email_logs.map((log: { template_name: string }) => log.template_name)
+      }));
     },
   });
 
@@ -60,6 +66,9 @@ const Admin = () => {
         title: "Email sent successfully",
         description: `${template} email sent to ${email}`,
       });
+
+      // Refetch the data to update the UI
+      await contactsWithLogs.refetch();
     } catch (error) {
       console.error("Error sending email:", error);
       toast({
@@ -94,7 +103,7 @@ const Admin = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {contacts?.map((contact) => (
+                {contactsWithLogs?.map((contact) => (
                   <TableRow key={contact.id}>
                     <TableCell>{contact.name}</TableCell>
                     <TableCell>{contact.email}</TableCell>
@@ -110,6 +119,8 @@ const Admin = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => sendEmail(contact.name, contact.email, "thanks", contact.id)}
+                          disabled={contact.sentTemplates.includes("thanks")}
+                          className={contact.sentTemplates.includes("thanks") ? "opacity-50" : ""}
                         >
                           Thanks
                         </Button>
@@ -117,6 +128,8 @@ const Admin = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => sendEmail(contact.name, contact.email, "improve", contact.id)}
+                          disabled={contact.sentTemplates.includes("improve")}
+                          className={contact.sentTemplates.includes("improve") ? "opacity-50" : ""}
                         >
                           Improve
                         </Button>
@@ -124,6 +137,8 @@ const Admin = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => sendEmail(contact.name, contact.email, "questions", contact.id)}
+                          disabled={contact.sentTemplates.includes("questions")}
+                          className={contact.sentTemplates.includes("questions") ? "opacity-50" : ""}
                         >
                           Questions
                         </Button>
@@ -131,7 +146,7 @@ const Admin = () => {
                     </TableCell>
                   </TableRow>
                 ))}
-                {contacts?.length === 0 && (
+                {contactsWithLogs?.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center">
                       No contacts found
