@@ -33,6 +33,35 @@ export type Database = {
         }
         Relationships: []
       }
+      email_logs: {
+        Row: {
+          contact_id: string
+          id: string
+          sent_at: string
+          template_name: string
+        }
+        Insert: {
+          contact_id: string
+          id?: string
+          sent_at?: string
+          template_name: string
+        }
+        Update: {
+          contact_id?: string
+          id?: string
+          sent_at?: string
+          template_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_logs_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

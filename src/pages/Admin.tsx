@@ -35,13 +35,26 @@ const Admin = () => {
     navigate("/auth");
   };
 
-  const sendEmail = async (name: string, email: string, template: "thanks" | "improve" | "questions") => {
+  const sendEmail = async (name: string, email: string, template: "thanks" | "improve" | "questions", contactId: string) => {
     try {
-      const { error } = await supabase.functions.invoke("send-admin-email", {
+      // Send the email
+      const { error: emailError } = await supabase.functions.invoke("send-admin-email", {
         body: { name, email, template },
       });
 
-      if (error) throw error;
+      if (emailError) throw emailError;
+
+      // Log the email send
+      const { error: logError } = await supabase
+        .from('email_logs')
+        .insert([
+          {
+            contact_id: contactId,
+            template_name: template,
+          }
+        ]);
+
+      if (logError) throw logError;
 
       toast({
         title: "Email sent successfully",
@@ -96,21 +109,21 @@ const Admin = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => sendEmail(contact.name, contact.email, "thanks")}
+                          onClick={() => sendEmail(contact.name, contact.email, "thanks", contact.id)}
                         >
                           Thanks
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => sendEmail(contact.name, contact.email, "improve")}
+                          onClick={() => sendEmail(contact.name, contact.email, "improve", contact.id)}
                         >
                           Improve
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => sendEmail(contact.name, contact.email, "questions")}
+                          onClick={() => sendEmail(contact.name, contact.email, "questions", contact.id)}
                         >
                           Questions
                         </Button>
