@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { z } from "npm:zod@3.22.4";
+import React from 'npm:react@18.3.1';
+import { renderAsync } from 'npm:@react-email/components@0.0.22';
+import { ConfirmationEmail } from './_templates/confirmation.tsx';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -49,15 +52,18 @@ const handler = async (req: Request): Promise<Response> => {
     // Generate a unique reference ID
     const refId = `${Date.now()}.${Math.random().toString(36).substring(2)}@loveable-resend.online`;
 
+    // Render the React email template
+    const html = await renderAsync(
+      React.createElement(ConfirmationEmail, {
+        name,
+      })
+    );
+
     const emailResponse = await resend.emails.send({
       from: "Chris <chris@updates.loveable-resend.online>",
       to: [email],
       subject: "We received your message!",
-      html: `
-        <h1>Thank you for contacting us, ${name}!</h1>
-        <p>We have received your message and will get back to you as soon as possible.</p>
-        <p>Best regards,<br>The Lovable Team</p>
-      `,
+      html,
       headers: {
         "X-Entity-Ref-ID": refId,
       }
