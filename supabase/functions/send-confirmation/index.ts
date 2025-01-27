@@ -46,8 +46,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { name, email } = validationResult.data;
 
-    // Generate a unique Message-ID
-    const messageId = `<${Date.now()}.${Math.random().toString(36).substring(2)}@loveable-resend.online>`;
+    // Generate a unique reference ID
+    const refId = `${Date.now()}.${Math.random().toString(36).substring(2)}@loveable-resend.online`;
 
     const emailResponse = await resend.emails.send({
       from: "Chris <chris@updates.loveable-resend.online>",
@@ -59,7 +59,7 @@ const handler = async (req: Request): Promise<Response> => {
         <p>Best regards,<br>The Lovable Team</p>
       `,
       headers: {
-        "Message-ID": messageId,
+        "X-Entity-Ref-ID": refId,
       }
     });
 
