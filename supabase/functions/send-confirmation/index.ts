@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { z } from "npm:zod@3.22.4";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -9,10 +10,10 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-interface ContactEmailRequest {
-  name: string;
-  email: string;
-}
+const contactEmailSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+});
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -21,7 +22,29 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { name, email }: ContactEmailRequest = await req.json();
+    const body = await req.json();
+    
+    // Validate the request body
+    const validationResult = contactEmailSchema.safeParse(body);
+    
+    if (!validationResult.success) {
+      console.error("Validation error:", validationResult.error);
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid request data",
+          details: validationResult.error.errors 
+        }),
+        {
+          status: 400,
+          headers: { 
+            "Content-Type": "application/json",
+            ...corsHeaders 
+          },
+        }
+      );
+    }
+
+    const { name, email } = validationResult.data;
 
     const emailResponse = await resend.emails.send({
       from: "Chris <chris@updates.loveable-resend.online>",

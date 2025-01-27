@@ -23,6 +23,7 @@ export function ContactForm() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    mode: "onBlur", // Only validate on blur
     defaultValues: {
       name: "",
       email: "",
