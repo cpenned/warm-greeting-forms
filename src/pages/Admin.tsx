@@ -13,11 +13,6 @@ import {
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -25,6 +20,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useState } from "react";
+import { Textarea } from "@/components/ui/textarea";
 
 type Contact = {
   id: string;
@@ -38,10 +34,48 @@ type Contact = {
   }>;
 };
 
+const emailTemplates = {
+  thanks: {
+    subject: "Thanks for signing up",
+    content: `Thank you for signing up! We're excited to have you on board.
+
+We look forward to helping you achieve great things with our product.
+
+Best regards,
+The Team`
+  },
+  improve: {
+    subject: "What can we improve?",
+    content: `We hope you're enjoying our product! We're constantly working to make it better, and your feedback would be invaluable.
+
+Could you take a moment to let us know:
+• What features do you find most useful?
+• What could we improve?
+• What features would you like to see added?
+
+Simply reply to this email with your thoughts. We read and consider all feedback carefully.
+
+Thank you for your help!
+The Team`
+  },
+  questions: {
+    subject: "How is it going?",
+    content: `Hi there! Just checking in to see how you're doing with our product.
+
+Are you finding everything you need? Do you have any questions we can help with?
+
+Feel free to reply to this email - we're here to help!
+
+Best regards,
+The Team`
+  }
+};
+
 const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [draftEmail, setDraftEmail] = useState("");
 
   const { data: contactsWithLogs, isLoading, refetch } = useQuery({
     queryKey: ["contacts-with-logs"],
@@ -123,7 +157,6 @@ const Admin = () => {
                   <TableHead>Email</TableHead>
                   <TableHead>Message Preview</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -141,51 +174,11 @@ const Admin = () => {
                     <TableCell>
                       {format(new Date(contact.created_at), "PPp")}
                     </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {["thanks", "improve", "questions"].map((template) => {
-                          const sentTemplate = contact.sentTemplates.find(
-                            (t) => t.name === template
-                          );
-                          const isDisabled = !!sentTemplate;
-
-                          return (
-                            <HoverCard key={template}>
-                              <HoverCardTrigger asChild>
-                                <div>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (!isDisabled) {
-                                        sendEmail(contact.name, contact.email, template as "thanks" | "improve" | "questions", contact.id);
-                                      }
-                                    }}
-                                    disabled={isDisabled}
-                                    className={isDisabled ? "opacity-50" : ""}
-                                  >
-                                    {template.charAt(0).toUpperCase() + template.slice(1)}
-                                  </Button>
-                                </div>
-                              </HoverCardTrigger>
-                              {isDisabled && (
-                                <HoverCardContent className="w-auto">
-                                  <p className="text-sm">
-                                    Sent on {format(new Date(sentTemplate.sentAt), "PPp")}
-                                  </p>
-                                </HoverCardContent>
-                              )}
-                            </HoverCard>
-                          );
-                        })}
-                      </div>
-                    </TableCell>
                   </TableRow>
                 ))}
                 {contactsWithLogs?.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center">
+                    <TableCell colSpan={4} className="text-center">
                       No contacts found
                     </TableCell>
                   </TableRow>
@@ -197,14 +190,14 @@ const Admin = () => {
       </div>
 
       <Sheet open={!!selectedContact} onOpenChange={() => setSelectedContact(null)}>
-        <SheetContent>
+        <SheetContent className="w-[600px] sm:max-w-[600px]">
           <SheetHeader>
             <SheetTitle>Contact Details</SheetTitle>
             <SheetDescription>
               Submitted on {selectedContact && format(new Date(selectedContact.created_at), "PPp")}
             </SheetDescription>
           </SheetHeader>
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 space-y-6">
             <div>
               <h3 className="text-sm font-medium text-gray-500">Name</h3>
               <p className="mt-1">{selectedContact?.name}</p>
@@ -217,7 +210,61 @@ const Admin = () => {
               <h3 className="text-sm font-medium text-gray-500">Message</h3>
               <p className="mt-1 whitespace-pre-wrap">{selectedContact?.message}</p>
             </div>
-            <div>
+            
+            <div className="border-t pt-6">
+              <h3 className="text-sm font-medium text-gray-500 mb-4">Email Actions</h3>
+              <div className="grid grid-cols-3 gap-2">
+                {Object.entries(emailTemplates).map(([key, template]) => {
+                  const sentTemplate = selectedContact?.sentTemplates.find(
+                    (t) => t.name === key
+                  );
+                  const isDisabled = !!sentTemplate;
+
+                  return (
+                    <Button
+                      key={key}
+                      variant="outline"
+                      onClick={() => {
+                        if (!isDisabled && selectedContact) {
+                          sendEmail(selectedContact.name, selectedContact.email, key as "thanks" | "improve" | "questions", selectedContact.id);
+                        } else {
+                          setDraftEmail(template.content);
+                        }
+                      }}
+                      disabled={isDisabled}
+                      className="w-full"
+                    >
+                      {isDisabled ? `Sent ${format(new Date(sentTemplate.sentAt), "PP")}` : template.subject}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="border-t pt-6">
+              <h3 className="text-sm font-medium text-gray-500 mb-4">Draft Custom Email</h3>
+              <Textarea
+                value={draftEmail}
+                onChange={(e) => setDraftEmail(e.target.value)}
+                className="min-h-[200px]"
+                placeholder="Write your custom email here..."
+              />
+              <Button 
+                className="mt-4 w-full"
+                disabled={!draftEmail.trim()}
+                onClick={() => {
+                  // TODO: Implement custom email sending
+                  toast({
+                    title: "Coming soon",
+                    description: "Custom email drafting will be available soon!",
+                  });
+                }}
+              >
+                Send Custom Email
+              </Button>
+            </div>
+
+            <div className="border-t pt-6">
               <h3 className="text-sm font-medium text-gray-500">Sent Emails</h3>
               <div className="mt-1">
                 {selectedContact?.sentTemplates.length === 0 ? (
