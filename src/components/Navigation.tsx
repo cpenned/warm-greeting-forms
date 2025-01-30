@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuList } from "@/components/ui/navigation-menu";
-import { Home, Settings } from "lucide-react";
+import { Home } from "lucide-react";
 
 export const Navigation = () => {
   const navigate = useNavigate();
@@ -16,12 +16,6 @@ export const Navigation = () => {
               <Link to="/" className="flex items-center gap-2 hover:text-primary">
                 <Home className="h-4 w-4" />
                 <span>Home</span>
-              </Link>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <Link to="/admin" className="flex items-center gap-2 hover:text-primary">
-                <Settings className="h-4 w-4" />
-                <span>Admin</span>
               </Link>
             </NavigationMenuItem>
           </NavigationMenuList>
