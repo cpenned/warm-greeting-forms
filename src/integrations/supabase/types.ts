@@ -36,18 +36,21 @@ export type Database = {
       email_logs: {
         Row: {
           contact_id: string
+          content: string
           id: string
           sent_at: string
           template_name: string
         }
         Insert: {
           contact_id: string
+          content?: string
           id?: string
           sent_at?: string
           template_name: string
         }
         Update: {
           contact_id?: string
+          content?: string
           id?: string
           sent_at?: string
           template_name?: string

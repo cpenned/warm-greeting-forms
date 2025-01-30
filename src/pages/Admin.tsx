@@ -31,6 +31,7 @@ type Contact = {
   sentTemplates: Array<{
     name: string;
     sentAt: string;
+    content: string;
   }>;
 };
 
@@ -76,22 +77,24 @@ const Admin = () => {
   const { toast } = useToast();
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [draftEmail, setDraftEmail] = useState("");
+  const [selectedEmailContent, setSelectedEmailContent] = useState<string | null>(null);
 
   const { data: contactsWithLogs, isLoading, refetch } = useQuery({
     queryKey: ["contacts-with-logs"],
     queryFn: async () => {
       const { data: contacts, error: contactsError } = await supabase
         .from("contacts")
-        .select("*, email_logs(template_name, sent_at)")
+        .select("*, email_logs(template_name, sent_at, content)")
         .order("created_at", { ascending: false });
 
       if (contactsError) throw contactsError;
 
       return contacts.map(contact => ({
         ...contact,
-        sentTemplates: contact.email_logs.map((log: { template_name: string, sent_at: string }) => ({
+        sentTemplates: contact.email_logs.map((log: { template_name: string, sent_at: string, content: string }) => ({
           name: log.template_name,
-          sentAt: log.sent_at
+          sentAt: log.sent_at,
+          content: log.content
         }))
       }));
     },
@@ -102,10 +105,10 @@ const Admin = () => {
     navigate("/auth");
   };
 
-  const sendEmail = async (name: string, email: string, template: "thanks" | "improve" | "questions", contactId: string) => {
+  const sendEmail = async (name: string, email: string, template: "thanks" | "improve" | "questions" | "custom", contactId: string, content: string) => {
     try {
       const { error: emailError } = await supabase.functions.invoke("send-admin-email", {
-        body: { name, email, template },
+        body: { name, email, template, content },
       });
 
       if (emailError) throw emailError;
@@ -116,6 +119,7 @@ const Admin = () => {
           {
             contact_id: contactId,
             template_name: template,
+            content: content
           }
         ]);
 
@@ -123,9 +127,10 @@ const Admin = () => {
 
       toast({
         title: "Email sent successfully",
-        description: `${template} email sent to ${email}`,
+        description: `Email sent to ${email}`,
       });
 
+      setDraftEmail(""); // Clear the draft email after sending
       await refetch();
     } catch (error) {
       console.error("Error sending email:", error);
@@ -189,7 +194,11 @@ const Admin = () => {
         </div>
       </div>
 
-      <Sheet open={!!selectedContact} onOpenChange={() => setSelectedContact(null)}>
+      <Sheet open={!!selectedContact} onOpenChange={() => {
+        setSelectedContact(null);
+        setDraftEmail("");
+        setSelectedEmailContent(null);
+      }}>
         <SheetContent className="w-[600px] sm:max-w-[600px]">
           <SheetHeader>
             <SheetTitle>Contact Details</SheetTitle>
@@ -221,6 +230,7 @@ const Admin = () => {
                     onClick={() => {
                       if (selectedContact && template.content) {
                         setDraftEmail(template.content);
+                        setSelectedEmailContent(null);
                       }
                     }}
                     className="w-full"
@@ -234,8 +244,11 @@ const Admin = () => {
             <div className="border-t pt-6">
               <h3 className="text-sm font-medium text-gray-500 mb-4">Email Content</h3>
               <Textarea
-                value={draftEmail}
-                onChange={(e) => setDraftEmail(e.target.value)}
+                value={selectedEmailContent || draftEmail}
+                onChange={(e) => {
+                  setDraftEmail(e.target.value);
+                  setSelectedEmailContent(null);
+                }}
                 className="min-h-[200px]"
                 placeholder="Write your email here..."
               />
@@ -247,8 +260,9 @@ const Admin = () => {
                     sendEmail(
                       selectedContact.name,
                       selectedContact.email,
-                      "thanks", // Using 'thanks' as default template type for custom emails
-                      selectedContact.id
+                      "custom",
+                      selectedContact.id,
+                      draftEmail
                     );
                   }
                 }}
@@ -264,8 +278,12 @@ const Admin = () => {
                   <p className="text-gray-500">No emails sent yet</p>
                 ) : (
                   <ul className="space-y-2">
-                    {selectedContact?.sentTemplates.map((template) => (
-                      <li key={template.name} className="flex justify-between text-sm">
+                    {selectedContact?.sentTemplates.map((template, index) => (
+                      <li 
+                        key={`${template.name}-${template.sentAt}`}
+                        className="flex justify-between text-sm cursor-pointer hover:bg-gray-50 p-2 rounded"
+                        onClick={() => setSelectedEmailContent(template.content)}
+                      >
                         <span className="capitalize">{template.name}</span>
                         <span className="text-gray-500">
                           {format(new Date(template.sentAt), "PPp")}
