@@ -214,30 +214,23 @@ const Admin = () => {
             <div className="border-t pt-6">
               <h3 className="text-sm font-medium text-gray-500 mb-4">Email Actions</h3>
               <div className="grid grid-cols-3 gap-2">
-                {Object.entries(emailTemplates).map(([key, template]) => {
-                  const sentTemplate = selectedContact?.sentTemplates.find(
-                    (t) => t.name === key
-                  );
-                  const isDisabled = !!sentTemplate;
-
-                  return (
-                    <Button
-                      key={key}
-                      variant="outline"
-                      onClick={() => {
-                        if (!isDisabled && selectedContact) {
-                          sendEmail(selectedContact.name, selectedContact.email, key as "thanks" | "improve" | "questions", selectedContact.id);
-                        } else {
+                {Object.entries(emailTemplates).map(([key, template]) => (
+                  <Button
+                    key={key}
+                    variant="outline"
+                    onClick={() => {
+                      if (selectedContact) {
+                        if (template.content) {
                           setDraftEmail(template.content);
                         }
-                      }}
-                      disabled={isDisabled}
-                      className="w-full"
-                    >
-                      {isDisabled ? `Sent ${format(new Date(sentTemplate.sentAt), "PP")}` : template.subject}
-                    </Button>
-                  );
-                })}
+                        sendEmail(selectedContact.name, selectedContact.email, key as "thanks" | "improve" | "questions", selectedContact.id);
+                      }
+                    }}
+                    className="w-full"
+                  >
+                    {template.subject}
+                  </Button>
+                ))}
               </div>
             </div>
 
