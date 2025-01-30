@@ -17,15 +17,35 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { useState } from "react";
+
+type Contact = {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  created_at: string;
+  sentTemplates: Array<{
+    name: string;
+    sentAt: string;
+  }>;
+};
 
 const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
 
   const { data: contactsWithLogs, isLoading, refetch } = useQuery({
     queryKey: ["contacts-with-logs"],
     queryFn: async () => {
-      // Fetch contacts
       const { data: contacts, error: contactsError } = await supabase
         .from("contacts")
         .select("*, email_logs(template_name, sent_at)")
@@ -33,7 +53,6 @@ const Admin = () => {
 
       if (contactsError) throw contactsError;
 
-      // Transform the data to include sent templates and their dates
       return contacts.map(contact => ({
         ...contact,
         sentTemplates: contact.email_logs.map((log: { template_name: string, sent_at: string }) => ({
@@ -51,14 +70,12 @@ const Admin = () => {
 
   const sendEmail = async (name: string, email: string, template: "thanks" | "improve" | "questions", contactId: string) => {
     try {
-      // Send the email
       const { error: emailError } = await supabase.functions.invoke("send-admin-email", {
         body: { name, email, template },
       });
 
       if (emailError) throw emailError;
 
-      // Log the email send
       const { error: logError } = await supabase
         .from('email_logs')
         .insert([
@@ -75,7 +92,6 @@ const Admin = () => {
         description: `${template} email sent to ${email}`,
       });
 
-      // Refetch the data to update the UI
       await refetch();
     } catch (error) {
       console.error("Error sending email:", error);
@@ -105,14 +121,18 @@ const Admin = () => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Message</TableHead>
+                  <TableHead>Message Preview</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {contactsWithLogs?.map((contact) => (
-                  <TableRow key={contact.id}>
+                  <TableRow 
+                    key={contact.id}
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => setSelectedContact(contact)}
+                  >
                     <TableCell>{contact.name}</TableCell>
                     <TableCell>{contact.email}</TableCell>
                     <TableCell className="max-w-md truncate">
@@ -136,7 +156,12 @@ const Admin = () => {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => sendEmail(contact.name, contact.email, template as "thanks" | "improve" | "questions", contact.id)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (!isDisabled) {
+                                        sendEmail(contact.name, contact.email, template as "thanks" | "improve" | "questions", contact.id);
+                                      }
+                                    }}
                                     disabled={isDisabled}
                                     className={isDisabled ? "opacity-50" : ""}
                                   >
@@ -170,6 +195,50 @@ const Admin = () => {
           )}
         </div>
       </div>
+
+      <Sheet open={!!selectedContact} onOpenChange={() => setSelectedContact(null)}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Contact Details</SheetTitle>
+            <SheetDescription>
+              Submitted on {selectedContact && format(new Date(selectedContact.created_at), "PPp")}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 space-y-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Name</h3>
+              <p className="mt-1">{selectedContact?.name}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Email</h3>
+              <p className="mt-1">{selectedContact?.email}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Message</h3>
+              <p className="mt-1 whitespace-pre-wrap">{selectedContact?.message}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Sent Emails</h3>
+              <div className="mt-1">
+                {selectedContact?.sentTemplates.length === 0 ? (
+                  <p className="text-gray-500">No emails sent yet</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {selectedContact?.sentTemplates.map((template) => (
+                      <li key={template.name} className="flex justify-between text-sm">
+                        <span className="capitalize">{template.name}</span>
+                        <span className="text-gray-500">
+                          {format(new Date(template.sentAt), "PPp")}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
