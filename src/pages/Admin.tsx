@@ -212,18 +212,15 @@ const Admin = () => {
             </div>
             
             <div className="border-t pt-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-4">Email Actions</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-4">Email Templates</h3>
               <div className="grid grid-cols-3 gap-2">
                 {Object.entries(emailTemplates).map(([key, template]) => (
                   <Button
                     key={key}
                     variant="outline"
                     onClick={() => {
-                      if (selectedContact) {
-                        if (template.content) {
-                          setDraftEmail(template.content);
-                        }
-                        sendEmail(selectedContact.name, selectedContact.email, key as "thanks" | "improve" | "questions", selectedContact.id);
+                      if (selectedContact && template.content) {
+                        setDraftEmail(template.content);
                       }
                     }}
                     className="w-full"
@@ -235,25 +232,28 @@ const Admin = () => {
             </div>
 
             <div className="border-t pt-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-4">Draft Custom Email</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-4">Email Content</h3>
               <Textarea
                 value={draftEmail}
                 onChange={(e) => setDraftEmail(e.target.value)}
                 className="min-h-[200px]"
-                placeholder="Write your custom email here..."
+                placeholder="Write your email here..."
               />
               <Button 
                 className="mt-4 w-full"
                 disabled={!draftEmail.trim()}
                 onClick={() => {
-                  // TODO: Implement custom email sending
-                  toast({
-                    title: "Coming soon",
-                    description: "Custom email drafting will be available soon!",
-                  });
+                  if (selectedContact) {
+                    sendEmail(
+                      selectedContact.name,
+                      selectedContact.email,
+                      "thanks", // Using 'thanks' as default template type for custom emails
+                      selectedContact.id
+                    );
+                  }
                 }}
               >
-                Send Custom Email
+                Send Email
               </Button>
             </div>
 
